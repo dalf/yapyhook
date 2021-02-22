@@ -34,7 +34,7 @@ def example():
 
     @PostHook("example")
     def after(result, x):
-        print(f'post f({x})')
+        print(f'post f({x})={result}')
 
     result = [x for x in f(5)]
     print(result)
@@ -58,4 +58,9 @@ def example():
 
 if __name__ == '__main__':
     example()
+
+    # Hooks are garbage collected
+    result = [x for x in f(-10)]
+    print(result)
+    assert result == []
 ```
