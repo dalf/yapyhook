@@ -20,7 +20,7 @@ def test_function_hooks_function():
 
     # check weakref
     del pre_f
-    assert len(Hook["test"][HookType.PRECALL]) == 0
+    assert len(Hook.HOOKS["test"][HookType.PRECALL]) == 0
     pre_f_args = ()
     f(4)
     assert pre_f_args == ()
