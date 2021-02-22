@@ -1,4 +1,4 @@
-from hooks import Hook, PostHook
+from yapihook import Hook, PostHook
 
 
 def test_repr():

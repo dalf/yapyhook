@@ -1,4 +1,4 @@
-from hooks import Hook, HookClass, HookType, PreHook
+from yapihook import Hook, HookClass, HookType, PreHook
 
 
 def test_function_hooks_function():

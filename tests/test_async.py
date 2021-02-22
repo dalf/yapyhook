@@ -1,6 +1,6 @@
 import pytest
 
-from hooks import FilterHook, Hook, PostHook, PreHook
+from yapihook import FilterHook, Hook, PostHook, PreHook
 
 
 @pytest.mark.asyncio

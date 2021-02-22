@@ -1,4 +1,4 @@
-from hooks import Hook, HookClass, PreHook
+from yapihook import Hook, HookClass, PreHook
 
 
 def test_class_singleton():

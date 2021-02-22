@@ -1,4 +1,4 @@
-from hooks import HookClass, PreHook
+from yapihook import HookClass, PreHook
 
 
 def global_f(x):
