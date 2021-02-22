@@ -16,7 +16,7 @@ def test_function_hooks_function():
     f(3)
 
     assert pre_f_args == (3,)
-    assert Hook["test"][HookType.PRECALL][0] == pre_f
+    assert Hook.HOOKS["test"][HookType.PRECALL][0] == pre_f
 
     # check weakref
     del pre_f
