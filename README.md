@@ -9,6 +9,8 @@ This code is experimental:
 
 ### Usage example
 
+### Hook on function and generator
+
 ```python
 from hooks import Hook, FilterHook, PreHook, PostHook
 
@@ -63,4 +65,46 @@ if __name__ == '__main__':
     result = [x for x in f(-10)]
     print(result)
     assert result == []
+```
+
+### Hook on class 
+
+```python
+from hooks import Hook, FilterHook, PreHook, PostHook
+
+class SomeText:
+
+    @Hook('SomeText.__init__')
+    def __init__(self, text):
+        self.text = text
+        self.letters = [c for c in self.text]
+
+    def reverse(self):
+        return ''.join(self.letters[::-1])
+
+
+def example_class():
+
+    @PostHook('SomeText.__init__')
+    def count_letters(result, self, text):
+        self.count = len(self.letters)
+
+    text = SomeText('yapihook')
+    assert text.count == 8
+    assert text.reverse() == 'koohipay'
+
+    @FilterHook(text, 'reverse')  # anonymous hook
+    def filter_reverse(result):  # hook on instance: no self
+        return '!' + result + '!'
+
+    assert text.reverse() == '!koohipay!'
+
+
+if __name__ == '__main__':
+    example_class()
+
+    another_text = SomeText('some text')
+    assert hasattr(another_text, 'letters') is True
+    assert hasattr(another_text, 'count') is False
+    assert another_text.reverse() == 'txet emos'
 ```
