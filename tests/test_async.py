@@ -1,16 +1,18 @@
+import typing
+
 import pytest
 
-from yapihook import FilterHook, Hook, PostHook, PreHook
+from yapyhook import FilterHook, Hook, PostHook, PreHook
 
 
 @pytest.mark.asyncio
 async def test_no_parameter():
     @Hook("async_test_no_parameter")
-    async def f():
+    async def f() -> bool:
         return True
 
     @PreHook("async_test_no_parameter")
-    async def prehook():
+    async def prehook() -> typing.Tuple[bool, bool]:
         return (True, False)
 
     assert await f() is False
@@ -19,11 +21,11 @@ async def test_no_parameter():
 @pytest.mark.asyncio
 async def test_filter():
     @Hook("async_test_filter")
-    async def f(x):
+    async def f(x: int) -> int:
         return 5
 
     @FilterHook("async_test_filter")
-    async def filter(result, *args):
+    async def filter(result: int, *args) -> int:
         return result * 2
 
     assert await f(5) == 10
@@ -32,7 +34,7 @@ async def test_filter():
 @pytest.mark.asyncio
 async def test_filter_generator():
     @Hook("async_test_filter_generator")
-    async def f(x):
+    async def f(x: int) -> typing.AsyncGenerator[int, None]:
         for i in range(1, x):
             yield i
 
@@ -50,10 +52,10 @@ async def test_filter_generator():
 
 @pytest.mark.asyncio
 async def test_posthook():
-    posthook_args = ()
+    posthook_args: typing.Tuple = ()
 
     @Hook("async_test_posthook")
-    async def f(x):
+    async def f(x: int) -> int:
         return x * 2
 
     @PostHook("async_test_posthook")

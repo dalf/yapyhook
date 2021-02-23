@@ -1,8 +1,10 @@
-from yapihook import Hook, HookClass, HookType, PreHook
+import typing
+
+from yapyhook import Hook, HookClass, HookType, PreHook
 
 
 def test_function_hooks_function():
-    pre_f_args = ()
+    pre_f_args: typing.Tuple = ()
 
     @Hook("test")
     def f(x):
@@ -27,7 +29,7 @@ def test_function_hooks_function():
 
 
 def test_class_hooks_function():
-    pre_args = ()
+    pre_args: typing.Tuple = ()
 
     @Hook("test2")
     def f(x):
@@ -53,7 +55,7 @@ def test_class_hooks_function():
 
 
 def test_function_hooks_class():
-    pre_f_args = ()
+    pre_f_args: typing.Tuple = ()
 
     @HookClass
     class C:

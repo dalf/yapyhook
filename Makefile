@@ -1,14 +1,18 @@
+install:
+	"$PIP" install -U "pip >= 20.2" setuptools wheel
+	"$PIP" install --use-feature="2020-resolver" -r "$REQUIREMENTS"
+
 qa:
-	flake8 yapihook tests
-	python -m pytest tests -vv  --cov-report html --cov=yapihook
+	flake8 yapyhook tests
+	python -m pytest tests -vv  --cov-report html --cov=yapyhook
 
 lint:
-	autoflake --in-place --recursive yapihook tests
-	isort --project=yapihook yapihook tests
-	black --target-version=py36 yapihook tests
+	autoflake --in-place --recursive yapyhook tests
+	isort --project=yapyhook yapyhook tests
+	black --target-version=py36 yapyhook tests
 
 check:
-	black --check --diff --target-version=py36 yapihook tests
-	flake8 yapihook tests
-	mypy yapihook tests
-	isort --check --diff --project=yapihook yapihook tests
+	black --check --diff --target-version=py36 yapyhook tests
+	flake8 yapyhook tests
+	isort --check --diff --project=yapyhook yapyhook tests
+	mypy yapyhook tests

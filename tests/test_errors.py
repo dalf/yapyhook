@@ -1,6 +1,6 @@
 import pytest
 
-from yapihook import Hook, HookClass, PreHook
+from yapyhook import Hook, HookClass, PreHook
 
 
 def test_duplicate():

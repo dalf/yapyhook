@@ -1,4 +1,4 @@
-from yapihook import FilterHook, Hook, PostHook, PreHook
+from yapyhook import FilterHook, Hook, PostHook, PreHook
 
 
 def test_no_parameter():

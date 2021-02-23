@@ -12,7 +12,7 @@ This code is experimental:
 ### Hook on function and generator
 
 ```python
-from yapihook import Hook, FilterHook, PreHook, PostHook
+from yapyhook import Hook, FilterHook, PreHook, PostHook
 
 
 @Hook("example")
@@ -70,7 +70,7 @@ if __name__ == '__main__':
 ### Hook on class 
 
 ```python
-from yapihook import Hook, FilterHook, PreHook, PostHook
+from yapyhook import Hook, FilterHook, PreHook, PostHook
 
 class SomeText:
 

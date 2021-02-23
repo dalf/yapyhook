@@ -1,5 +1,7 @@
 # SPDX-License-Identifier: MIT
 
+from __future__ import annotations
+
 import enum
 import inspect
 import threading
@@ -8,16 +10,21 @@ import weakref
 from functools import wraps
 
 __all__ = ["HookType", "Hook", "PreHook", "PostHook", "FilterHook", "HookClass"]
+T = typing.TypeVar("T")
+F = typing.Callable[..., T]
+WEAKREF_F = typing.Union[weakref.ReferenceType, weakref.WeakMethod]
+T_ARGS = typing.List[typing.Any]
+T_KWARGS = typing.Dict[str, typing.Any]
 
 
-def is_first_parameter_self(obj):
-    signature = inspect.signature(obj)
+def is_first_parameter_self(f: F) -> bool:
+    signature = inspect.signature(f)
     if not signature.parameters:
         return False
     return next(iter(signature.parameters), None) == "self"
 
 
-def is_async_function(f):
+def is_async_function(f: F) -> bool:
     return (
         not inspect.isasyncgenfunction(f)
         and inspect.iscoroutinefunction(f)
@@ -33,27 +40,43 @@ class HookType(enum.Enum):
 
 class CallHook:
 
-    UNBOUND_METHODS: weakref.WeakKeyDictionary = weakref.WeakKeyDictionary()
+    UNBOUND_METHODS: typing.ClassVar[
+        weakref.WeakKeyDictionary
+    ] = weakref.WeakKeyDictionary()
 
-    def __init__(self, hook_type, name_or_obj, key=None, unbound_method=False):
+    def __init__(
+        self,
+        hook_type: HookType,
+        name_or_obj: typing.Union[str, typing.Any],
+        key: typing.Optional[str] = None,
+        unbound_method: bool = False,
+    ):
         self.hook_type = hook_type
         self.unbound_method = unbound_method
-        if not isinstance(name_or_obj, str):
+        if not isinstance(name_or_obj, str) and isinstance(key, str):
             self.name = Hook.get_anonymous_hook_name(name_or_obj, key)
+        elif isinstance(name_or_obj, str) and key is None:
+            self.name = name_or_obj
         elif key is not None:
             raise ValueError("key has to be None if name_or_obj is a str")
-        else:
-            self.name = name_or_obj
+
         if self.name not in Hook.HOOKS:
             raise ValueError(f"{self.name!r} doesn't exit")
 
-    def __call__(self, f, *args, **kwargs):
+    def __call__(
+        self,
+        f: F,
+        *args: T_ARGS,
+        **kwargs: T_KWARGS,
+    ) -> F:
         if isinstance(f, (classmethod, staticmethod)):
             raise ValueError("classmethod and staticmethod are not supported")
 
         f_is_method = inspect.ismethod(f)
 
-        wref = weakref.WeakMethod(f) if f_is_method else weakref.ref(f)
+        wref: WEAKREF_F = (
+            weakref.WeakMethod(f) if f_is_method else weakref.ref(f)  # type: ignore
+        )
 
         """
         There is no way to know if a function is a unbound method.
@@ -77,7 +100,7 @@ class CallHook:
         return f
 
     @staticmethod
-    def register_instance(instance):
+    def register_instance(instance: typing.Any) -> None:
         for name, method in inspect.getmembers(instance, predicate=inspect.ismethod):
             hook = CallHook.UNBOUND_METHODS.get(method.__func__)
             if hook:
@@ -85,18 +108,26 @@ class CallHook:
                 Hook.HOOKS[name].register(hook_type, weakref.WeakMethod(method))
 
 
-def create_or_hook_new_method(cls):
+def create_or_hook_new_method(cls: typing.Type[T]) -> None:
     existing_new = cls.__new__
     if existing_new is None:
 
-        def new_method(cls, *args, **kwargs):
-            instance = super().__new__(cls)
+        def new_method(
+            cls: typing.Type[T],
+            *args: T_ARGS,
+            **kwargs: T_KWARGS,
+        ) -> T:
+            instance = super().__new__(cls)  # type: ignore
             CallHook.register_instance(instance)
             return instance
 
     else:
 
-        def new_method(cls, *args, **kwargs):
+        def new_method(
+            cls: typing.Type[T],
+            *args: T_ARGS,
+            **kwargs: T_KWARGS,
+        ) -> T:
             instance = existing_new(cls)
             CallHook.register_instance(instance)
             return instance
@@ -104,7 +135,7 @@ def create_or_hook_new_method(cls):
     setattr(cls, "__new__", new_method)
 
 
-def HookClass(cls):
+def HookClass(cls: typing.Type[T]) -> typing.Type[T]:
     if not getattr(cls, "__hooked__", False):
         create_or_hook_new_method(cls)
         setattr(cls, "__hooked__", True)
@@ -112,17 +143,32 @@ def HookClass(cls):
 
 
 class PreHook(CallHook):
-    def __init__(self, name_or_obj, key=None, unbound_method=False):
+    def __init__(
+        self,
+        name_or_obj: typing.Union[str, typing.Any],
+        key: str = None,
+        unbound_method: bool = False,
+    ):
         super().__init__(HookType.PRECALL, name_or_obj, key, unbound_method)
 
 
 class PostHook(CallHook):
-    def __init__(self, name_or_obj, key=None, unbound_method=False):
+    def __init__(
+        self,
+        name_or_obj: typing.Union[str, typing.Any],
+        key: str = None,
+        unbound_method: bool = False,
+    ):
         super().__init__(HookType.POSTCALL, name_or_obj, key, unbound_method)
 
 
 class FilterHook(CallHook):
-    def __init__(self, name_or_obj, key=None, unbound_method=False):
+    def __init__(
+        self,
+        name_or_obj: typing.Union[str, typing.Any],
+        key: str = None,
+        unbound_method: bool = False,
+    ):
         super().__init__(HookType.FILTERCALL, name_or_obj, key, unbound_method)
 
 
@@ -130,7 +176,7 @@ class Hook:
 
     HOOKS = (
         weakref.WeakValueDictionary()
-    )  # type: weakref.WeakValueDictionary[str, Hook]
+    )  # type: typing.ClassVar[weakref.WeakValueDictionary[str, Hook]]
 
     __slots__ = (
         "__weakref__",
@@ -151,8 +197,8 @@ class Hook:
 
         self.name = name
         self.hook_types: typing.Dict[HookType, typing.List] = {}
-        self.allowed_hook_types = (
-            [*allowed_hook_types] if allowed_hook_types else HookType
+        self.allowed_hook_types: typing.List[HookType] = (
+            set(*allowed_hook_types) if allowed_hook_types else HookType  # type: ignore
         )
         self.is_coroutine = False
         self.lock = threading.RLock()
@@ -160,7 +206,9 @@ class Hook:
             self.hook_types[hook_type] = []
         Hook.HOOKS[self.name] = self
 
-    def _iter_hooks(self, hook_type: HookType):
+    def _iter_hooks(
+        self, hook_type: HookType
+    ) -> typing.Generator[typing.Callable, None, None]:
         hook_list = self.hook_types[hook_type]
         for weakref_hook in hook_list:
             o = weakref_hook()
@@ -170,9 +218,9 @@ class Hook:
                 with self.lock:
                     hook_list.remove(weakref_hook)
 
-    def _create_wrapped_function(self, f):
+    def _create_wrapped_function(self, f: F) -> F:
         @wraps(f)
-        def hooked(*args, **kwargs):
+        def hooked(*args: T_ARGS, **kwargs: T_KWARGS) -> T:
             return_value = None
 
             # PRECALL
@@ -197,9 +245,9 @@ class Hook:
 
         return hooked
 
-    def _create_wrapped_async(self, f):
+    def _create_wrapped_async(self, f: F) -> F:
         @wraps(f)
-        async def hooked(*args, **kwargs):
+        async def hooked(*args: T_ARGS, **kwargs: T_KWARGS) -> T:
             return_value = None
 
             # PRECALL
@@ -224,7 +272,7 @@ class Hook:
 
         return hooked
 
-    def __call__(self, f):
+    def __call__(self, f: F) -> F:
         """Run the hooks and the hooked method, respecting the location of hooks"""
 
         if not inspect.isfunction(f) and not inspect.ismethod(f):
@@ -237,7 +285,11 @@ class Hook:
         hooked.__setattr__("__hookname__", self.name)
         return hooked
 
-    def register(self, hook_type, weakref_hook):
+    def register(
+        self,
+        hook_type: HookType,
+        weakref_hook: WEAKREF_F,
+    ) -> None:
         if not isinstance(weakref_hook, weakref.ref):
             raise ValueError(f"{weakref_hook!r} is not a weakref.ref")
 
@@ -247,6 +299,8 @@ class Hook:
 
         # check weakref_hook
         o = weakref_hook()
+        if o is None:
+            raise ValueError(f"{o} has been garbage collected")
         if not inspect.isfunction(o) and not inspect.ismethod(o):
             raise ValueError(f"{o} has to be a function or a method")
 
@@ -264,8 +318,8 @@ class Hook:
                 hook_list.append(weakref_hook)
 
     @staticmethod
-    def unregister(func=None):
-        hook_info = func.__hook__ if hasattr(func, "__hook__") else None
+    def unregister(func: F = None) -> bool:
+        hook_info = func.__hook__ if hasattr(func, "__hook__") else None  # type: ignore
         if isinstance(hook_info, tuple):
             hook = Hook.HOOKS.get(hook_info[0])
             if hook is not None:
@@ -277,23 +331,23 @@ class Hook:
                             return True
         return False
 
-    def __class_getitem__(cls, hook_name):
+    def __class_getitem__(cls, hook_name: str) -> Hook:
         """Allow to write: Hook['my_hook_name']"""
         return Hook.HOOKS[hook_name]
 
-    def __getitem__(self, hook_type):
+    def __getitem__(self, hook_type: HookType) -> typing.List[F]:
         """Allow to write: Hook['my_hook_name'][HookType.PRECALL]"""
         return list(self._iter_hooks(hook_type))
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         return f"<Hook {self.name!r} {self.hook_types!r}>"
 
     @staticmethod
-    def get_hook_name(f):
-        return f.__hookname__ if hasattr(f, "__hookname__") else None
+    def get_hook_name(f: F) -> typing.Optional[str]:
+        return f.__hookname__ if hasattr(f, "__hookname__") else None  # type: ignore
 
     @staticmethod
-    def get_anonymous_hook_name(obj, key):
+    def get_anonymous_hook_name(obj: typing.Any, key: str) -> str:
         if isinstance(obj, dict):
             f = obj[key]
         else:
@@ -302,7 +356,7 @@ class Hook:
         if hook_name is not None:
             # already hooked
             return hook_name
-        hook_name = f"hook_{key}_{id(f)}"
+        hook_name = f"hook_{id(f)}"
         wrapped_f = Hook(hook_name)(f)
         if isinstance(obj, dict):
             obj[key] = wrapped_f

@@ -1,4 +1,6 @@
-from yapihook import HookClass, PreHook
+import typing
+
+from yapyhook import HookClass, PreHook
 
 
 def global_f(x):
@@ -6,7 +8,7 @@ def global_f(x):
 
 
 def test_globals():
-    pre_global_f_args = ()
+    pre_global_f_args: typing.Tuple = ()
 
     @PreHook(globals(), "global_f")
     def pre_hook(*args):
@@ -32,7 +34,7 @@ def test_class_hooks_function():
 
 
 def test_function_hooks_class():
-    pre_f_args = ()
+    pre_f_args: typing.Tuple = ()
 
     class C:
         def f(self, x):
@@ -50,7 +52,7 @@ def test_function_hooks_class():
 
 
 def test_function_hooks_instance():
-    pre_f_args = ()
+    pre_f_args: typing.Tuple = ()
 
     class C:
         def f(self, x):
@@ -70,7 +72,7 @@ def test_function_hooks_instance():
 
 
 def test_class_hooks_class():
-    pre_args = ()
+    pre_args: typing.Tuple = ()
 
     class C:
         def f(self, x):
@@ -93,7 +95,7 @@ def test_class_hooks_class():
 
 
 def test_broken_class_hooks_class():
-    pre_args = ()
+    pre_args: typing.Tuple = ()
 
     class C:
         def f(self, x):
@@ -117,8 +119,8 @@ def test_broken_class_hooks_class():
 
 def test_reuse_anonymous_hook():
 
-    prehook1_args = ()
-    prehook2_args = ()
+    prehook1_args: typing.Tuple = ()
+    prehook2_args: typing.Tuple = ()
 
     class C:
         def f(self, x):
