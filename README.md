@@ -108,3 +108,49 @@ if __name__ == '__main__':
     assert hasattr(another_text, 'count') is False
     assert another_text.reverse() == 'txet emos'
 ```
+
+### Hook using a class
+
+```python
+from yapyhook import HookClass, Hook, FilterHook, PreHook, PostHook
+
+class SomeText:
+
+    def __init__(self, text):
+        self.text = text
+        self.letters = [c for c in self.text]
+
+    def reverse(self):
+        return ''.join(self.letters[::-1])
+
+
+@HookClass
+class DefaultValue:
+
+    def __init__(self, default_value):
+        self.default_value = default_value
+
+    @PreHook(SomeText, 'reverse')
+    def reverse(self, sometext_self):
+        if sometext_self.text == '':
+            return (True, self.default_value)
+
+
+def check_hook(text_python, text_empty):
+    default = DefaultValue('DEFAULT')
+    assert text_python.reverse() == 'nohtyp'
+    assert text_empty.reverse() == 'DEFAULT'
+
+
+if __name__ == '__main__':
+    text_python = SomeText('python')
+    text_empty = SomeText('')
+
+    assert text_python.reverse() == 'nohtyp'
+    assert text_empty.reverse() == ''
+
+    check_hook(text_python, text_empty)
+
+    assert text_python.reverse() == 'nohtyp'
+    assert text_empty.reverse() == ''
+```
