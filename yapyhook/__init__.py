@@ -1,7 +1,5 @@
 # SPDX-License-Identifier: MIT
 
-from __future__ import annotations
-
 import enum
 import inspect
 import threading
@@ -331,7 +329,7 @@ class Hook:
                             return True
         return False
 
-    def __class_getitem__(cls, hook_name: str) -> Hook:
+    def __class_getitem__(cls, hook_name: str) -> "Hook":
         """Allow to write: Hook['my_hook_name']"""
         return Hook.HOOKS[hook_name]
 
